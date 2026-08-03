@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "email": "admin@besmile.jp",
+    "password": "$2a$10$78wZJ9Gz.pL/f9L9L9L9L.O6yC2J1kG6k4m.W6t5N3qI5J5J5J5J5",
+    "name": "管理者太郎",
+    "role": "admin",
+    "status": "active",
+    "createdAt": "2026-07-01"
+  },
+  {
+    "id": 2,
+    "email": "editor@besmile.jp",
+    "password": "$2a$10$78wZJ9Gz.pL/f9L9L9L9L.O6yC2J1kG6k4m.W6t5N3qI5J5J5J5J5",
+    "name": "編集者花子",
+    "role": "editor",
+    "status": "active",
+    "createdAt": "2026-07-05"
+  },
+  {
+    "id": 3,
+    "email": "viewer@besmile.jp",
+    "password": "$2a$10$78wZJ9Gz.pL/f9L9L9L9L.O6yC2J1kG6k4m.W6t5N3qI5J5J5J5J5",
+    "name": "閲覧者次郎",
+    "role": "viewer",
+    "status": "active",
+    "createdAt": "2026-07-10"
+  }
+]

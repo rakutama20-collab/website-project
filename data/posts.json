@@ -1,0 +1,91 @@
+[
+  {
+    "id": 1785465037576,
+    "title": "ああああああああああ",
+    "tags": "動画制作",
+    "imageUrl": "/uploads/1785465035886-firstexperience.jpg",
+    "body": "あああああああああああああ",
+    "status": "draft",
+    "updatedAt": "2026/7/31"
+  },
+  {
+    "id": 1784607792838,
+    "title": "ああああああああ",
+    "slug": "untitled-post",
+    "body": "ああああああああああ",
+    "status": "Draft",
+    "publishDate": "",
+    "tags": "イラスト・Other",
+    "updatedAt": "2026-07-21"
+  },
+  {
+    "id": 1784601744281,
+    "title": "テキスト",
+    "slug": "untitled-post",
+    "body": "テキスト",
+    "status": "Draft",
+    "publishDate": "",
+    "tags": "イラスト・Other",
+    "updatedAt": "2026-07-21"
+  },
+  {
+    "id": 1784601627017,
+    "title": "テキスト",
+    "slug": "untitled-post",
+    "body": "あああああああ",
+    "status": "Draft",
+    "publishDate": "",
+    "tags": "",
+    "updatedAt": "2026-07-21"
+  },
+  {
+    "id": 1784254377998,
+    "title": "テスト",
+    "slug": "test",
+    "body": "aaaaaaaaaaaaaaaaaaa",
+    "status": "Draft",
+    "publishDate": "2026-07-17",
+    "tags": "ニュース",
+    "updatedAt": "2026-07-21"
+  },
+  {
+    "id": 1783575702832,
+    "title": "test5",
+    "slug": "test",
+    "body": "test5永続",
+    "status": "Draft",
+    "publishDate": "2026-07-09",
+    "tags": "news",
+    "updatedAt": "2026-07-09"
+  },
+  {
+    "id": 1,
+    "title": "Welcome to Besmile",
+    "slug": "welcome-to-besmile",
+    "body": "Sample content",
+    "status": "Published",
+    "publishDate": "2026-07-08",
+    "tags": "news",
+    "updatedAt": "2026-07-08"
+  },
+  {
+    "id": 2,
+    "title": "Summer Campaign Plan",
+    "slug": "summer-campaign-plan",
+    "body": "Draft content",
+    "status": "Draft",
+    "publishDate": "",
+    "tags": "campaign",
+    "updatedAt": "2026-07-07"
+  },
+  {
+    "id": 3,
+    "title": "Product Update Notes",
+    "slug": "product-update-notes",
+    "body": "Scheduled content",
+    "status": "Scheduled",
+    "publishDate": "2026-07-10",
+    "tags": "product",
+    "updatedAt": "2026-07-05"
+  }
+]
