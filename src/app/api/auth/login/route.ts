@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { adminsTable } from "@/lib/schema";
+import { verifyPassword } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 
 export async function POST(request: Request) {
@@ -22,7 +23,9 @@ export async function POST(request: Request) {
       .where(eq(adminsTable.email, email));
 
     // 管理者が存在しない、またはパスワードが一致しない場合
-    if (!admin || admin.passwordHash !== password) {
+    const isValidPassword = admin ? await verifyPassword(password, admin.passwordHash) : false;
+
+    if (!admin || !isValidPassword) {
       return NextResponse.json(
         { error: "メールアドレスまたはパスワードが正しくありません。" },
         { status: 401 }

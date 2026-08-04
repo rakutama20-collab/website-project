@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "init:neon": "node scripts/init-neon.mjs",
+    "verify:login": "node scripts/verify-login.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
