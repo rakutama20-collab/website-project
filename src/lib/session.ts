@@ -26,10 +26,10 @@ export type Session = {
   user?: SessionUser;
 };
 
-export async function getSession(): Promise<Session & { save(): Promise<void>; destroy(): Promise<void> }> {
+export async function getSession(): Promise<any> {
   const cookieStore = await cookies();
-  const session = await getIronSession<Session>(cookieStore, sessionConfig);
-  return session as any;
+  const session = await getIronSession(cookieStore, sessionConfig);
+  return session;
 }
 
 export async function setSessionUser(user: SessionUser): Promise<void> {
