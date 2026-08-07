@@ -10,7 +10,16 @@ export async function POST(request: Request) {
       (email === "editor@besmile.jp" && password === "besmile7011") ||
       (email === "viewer@besmile.jp" && password === "besmile7011")
     ) {
-      return NextResponse.json({ success: true });
+      // 成功時にクッキー（besmile-cms-session）を付与してレスポンスを返す
+      const response = NextResponse.json({ success: true });
+      response.cookies.set({
+        name: "besmile-cms-session",
+        value: "authenticated",
+        httpOnly: true,
+        path: "/",
+        maxAge: 60 * 60 * 24, // 1日有効
+      });
+      return response;
     }
 
     return NextResponse.json(
