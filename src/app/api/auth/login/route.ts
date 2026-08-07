@@ -6,9 +6,9 @@ export async function POST(request: Request) {
     const { email, password } = body;
 
     if (
-      (email === "admin@besmile.jp" && password === "password") ||
-      (email === "editor@besmile.jp" && password === "password") ||
-      (email === "viewer@besmile.jp" && password === "password")
+      (email === "admin@besmile.jp" && password === "password1234!") ||
+      (email === "editor@besmile.jp" && password === "password1234!") ||
+      (email === "viewer@besmile.jp" && password === "password1234!")
     ) {
       return NextResponse.json({ success: true });
     }
