@@ -14,6 +14,7 @@ export default function EditArtistPage() {
   const [bio, setBio] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null); // 追加: プレビュー用URL
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -29,6 +30,7 @@ export default function EditArtistPage() {
           setRole(artist.role || "");
           setBio(artist.bio || "");
           setCurrentAvatarUrl(artist.avatarUrl || "");
+          setPreviewUrl(artist.avatarUrl || ""); // 既存の画像を初期プレビューにセット
         }
       } catch (err) {
         console.error("Failed to fetch artist", err);
@@ -41,7 +43,10 @@ export default function EditArtistPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+      // 新しく選択された画像のプレビューURLを生成
+      setPreviewUrl(URL.createObjectURL(selectedFile));
     }
   };
 
@@ -142,21 +147,24 @@ export default function EditArtistPage() {
             />
           </div>
           
-          {/* アバター画像（ファイル選択・アップロード形式） */}
+          {/* アバター画像プレビュー & 選択 */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">アバター画像を選択</label>
-            {currentAvatarUrl && !file && (
-              <div className="mb-2 flex items-center space-x-2">
-                <img src={currentAvatarUrl} alt="Current Avatar" className="w-10 h-10 rounded-full object-cover border" />
-                <span className="text-xs text-slate-500">現在の画像が設定されています（変更する場合のみ選択）</span>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">アバター画像</label>
+            <div className="flex items-center gap-4 mt-2">
+              <div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                {previewUrl ? (
+                  <img src={previewUrl} alt="プレビュー" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-[10px] text-slate-400">No Image</span>
+                )}
               </div>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-600 hover:file:bg-sky-100 cursor-pointer"
-            />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-600 hover:file:bg-sky-100 cursor-pointer"
+              />
+            </div>
           </div>
 
           <div className="flex space-x-2 pt-2">
