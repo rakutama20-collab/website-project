@@ -6,10 +6,10 @@ export async function POST(request: Request) {
     const { email, password } = body;
 
     if (
-      (email === "admin@besmile.jp" && password === "password1234!") ||
-      (email === "editor@besmile.jp" && password === "password1234!") ||
-      (email === "viewer@besmile.jp" && password === "password1234!")
-    ) {
+  (email === "admin@besmile.jp" && password === "password123!") ||
+  (email === "editor@besmile.jp" && password === "password123!") ||
+  (email === "viewer@besmile.jp" && password === "password123!")
+) {
       return NextResponse.json({ success: true });
     }
 
