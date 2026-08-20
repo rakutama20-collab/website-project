@@ -3,6 +3,9 @@ import { db } from "@/lib/db";
 import { worksTable } from "@/lib/schema";
 import { eq, desc } from "drizzle-orm";
 
+// ★追加：Next.jsのAPIキャッシュを無効化し、常に最新のデータを取得させる設定
+export const dynamic = "force-dynamic";
+
 // 作品一覧を取得 (GET)
 export async function GET() {
   try {
@@ -21,13 +24,21 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+
+    const titleStr = typeof body.title === 'string' ? body.title : "無題の作品";
+    const categoryStr = typeof body.category === 'string' ? body.category : (body.role || "");
+    const statusStr = typeof body.status === 'string' ? body.status : "draft";
+
     const [newWork] = await db
       .insert(worksTable)
       .values({
-        title: body.title || "無題の作品",
-        category: body.category || body.role || "",
-        status: body.status || "draft",
-        imageUrl: body.imageUrl || body.url || "",
+        title: titleStr.substring(0, 250),
+        creatorId: body.creatorId ? Number(body.creatorId) : null,
+        description: body.description || "",
+        projectUrl: body.projectUrl || "", 
+        category: categoryStr.substring(0, 90),
+        status: statusStr.substring(0, 40),
+        imageUrl: body.url || body.imageUrl || "", 
       })
       .returning();
 
@@ -42,7 +53,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, title, category, status, imageUrl, url } = body;
+    const { id, title, creatorId, description, projectUrl, category, status, imageUrl, url } = body;
     
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
@@ -51,9 +62,13 @@ export async function PUT(request: Request) {
     await db
       .update(worksTable)
       .set({
-        ...(title !== undefined && { title }),
-        ...(category !== undefined && { category }),
-        ...(status !== undefined && { status }),
+        ...(title !== undefined && { title: String(title).substring(0, 250) }),
+        // ★修正：未選択の場合は確実にnullになるように修正
+        ...(creatorId !== undefined && { creatorId: creatorId ? Number(creatorId) : null }),
+        ...(description !== undefined && { description }),
+        ...(projectUrl !== undefined && { projectUrl }),
+        ...(category !== undefined && { category: String(category).substring(0, 90) }),
+        ...(status !== undefined && { status: String(status).substring(0, 40) }),
         ...((imageUrl !== undefined || url !== undefined) && { imageUrl: imageUrl || url }),
       })
       .where(eq(worksTable.id, Number(id)));

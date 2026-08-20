@@ -72,8 +72,37 @@ async function ensureSchema() {
       name VARCHAR(255) NOT NULL,
       email VARCHAR(255),
       role VARCHAR(100),
+      avatar_url TEXT,
+      bio TEXT,
       status VARCHAR(50) NOT NULL DEFAULT 'active',
       created_at TIMESTAMP DEFAULT NOW() NOT NULL
+    )`,
+    `ALTER TABLE artists ADD COLUMN IF NOT EXISTS avatar_url TEXT`,
+    `ALTER TABLE artists ADD COLUMN IF NOT EXISTS bio TEXT`,
+    `CREATE TABLE IF NOT EXISTS access_logs (
+      id SERIAL PRIMARY KEY,
+      tracking_id VARCHAR(64) UNIQUE NOT NULL,
+      path VARCHAR(500) NOT NULL,
+      user_agent TEXT,
+      referer TEXT,
+      duration INTEGER,
+      max_scroll_depth INTEGER,
+      created_at TIMESTAMP DEFAULT NOW() NOT NULL
+    )`,
+    `ALTER TABLE access_logs ADD COLUMN IF NOT EXISTS tracking_id VARCHAR(64)`,
+    `ALTER TABLE access_logs ADD COLUMN IF NOT EXISTS duration INTEGER`,
+    `ALTER TABLE access_logs ADD COLUMN IF NOT EXISTS max_scroll_depth INTEGER`,
+    `UPDATE access_logs SET tracking_id = 'legacy-' || id::text WHERE tracking_id IS NULL`,
+    `ALTER TABLE access_logs ALTER COLUMN tracking_id SET NOT NULL`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS access_logs_tracking_id_idx ON access_logs (tracking_id)`,
+    `CREATE INDEX IF NOT EXISTS access_logs_created_at_idx ON access_logs (created_at)`,
+    `CREATE TABLE IF NOT EXISTS site_settings (
+      id SERIAL PRIMARY KEY,
+      site_title VARCHAR(255) NOT NULL DEFAULT 'Besmile CMS Portfolio',
+      favicon_url TEXT,
+      admin_email VARCHAR(255),
+      smtp_app_password TEXT,
+      updated_at TIMESTAMP DEFAULT NOW() NOT NULL
     )`,
     `CREATE TABLE IF NOT EXISTS posts (
       id SERIAL PRIMARY KEY,
@@ -92,7 +121,7 @@ async function ensureSchema() {
 }
 
 async function seedAdmins() {
-  const passwordHash = await bcrypt.hash('password', 10);
+  const passwordHash = await bcrypt.hash('besmile7011', 10);
   const accounts = [
     { email: 'admin@besmile.jp', name: '管理者', role: 'admin', status: 'active' },
     { email: 'editor@besmile.jp', name: '編集者', role: 'editor', status: 'active' },
@@ -114,9 +143,9 @@ async function main() {
   await seedAdmins();
   console.log('初期化が完了しました。');
   console.log('ログイン用アカウント:');
-  console.log(' - admin@besmile.jp / password');
-  console.log(' - editor@besmile.jp / password');
-  console.log(' - viewer@besmile.jp / password');
+  console.log(' - admin@besmile.jp / besmile7011');
+  console.log(' - editor@besmile.jp / besmile7011');
+  console.log(' - viewer@besmile.jp / besmile7011');
 }
 
 main().catch((error) => {

@@ -2,12 +2,14 @@
 
 import { FormEvent, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 // フォーム本体のコンポーネント
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/";
+  const requestedRedirect = searchParams.get("redirect") || "/";
+  const redirect = requestedRedirect.startsWith("/") && !requestedRedirect.startsWith("//") ? requestedRedirect : "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,22 +22,20 @@ function LoginForm() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "ログインに失敗しました。");
+      if (!result || result.error) {
+        setError("メールアドレスまたはパスワードが正しくありません。");
         setLoading(false);
         return;
       }
 
       router.push(redirect);
-    } catch (err) {
+    } catch {
       setError("通信エラーが発生しました。");
       setLoading(false);
     }
@@ -121,7 +121,7 @@ function LoginForm() {
               </p>
             </div>
             <p className="text-slate-500 mt-2">
-              <strong>パスワード:</strong> すべてのアカウントで password
+              <strong>パスワード:</strong> すべてのアカウントで besmile7011
             </p>
           </div>
         </div>

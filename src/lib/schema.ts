@@ -1,6 +1,6 @@
-import { pgTable, serial, timestamp, varchar, text } from 'drizzle-orm/pg-core';
+import { pgTable, serial, timestamp, varchar, text, integer } from 'drizzle-orm/pg-core';
 
-// 管理者テーブル
+// Auth.js Credentials Provider が User モデルとして利用する管理者テーブル
 export const adminsTable = pgTable('admins', {
   id: serial('id').primaryKey(),
   email: varchar('email', { length: 255 }).unique().notNull(),
@@ -15,9 +15,12 @@ export const adminsTable = pgTable('admins', {
 export const worksTable = pgTable('works', {
   id: serial('id').primaryKey(),
   title: varchar('title', { length: 255 }).notNull(),
+  creatorId: integer('creator_id'), // ★追加：クリエイターと紐付けるID
+  description: text('description'), // ★追加：作品の説明文
+  projectUrl: varchar('project_url', { length: 500 }), // ★追加：作品のURL
   category: varchar('category', { length: 100 }),
   status: varchar('status', { length: 50 }).notNull().default('draft'),
-  imageUrl: varchar('image_url', { length: 500 }),
+  imageUrl: text('image_url'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -27,6 +30,8 @@ export const artistsTable = pgTable('artists', {
   name: varchar('name', { length: 255 }).notNull(),
   email: varchar('email', { length: 255 }),
   role: varchar('role', { length: 100 }),
+  avatarUrl: text('avatar_url'),
+  bio: text('bio'),
   status: varchar('status', { length: 50 }).notNull().default('active'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
@@ -39,5 +44,27 @@ export const postsTable = pgTable('posts', {
   status: varchar('status', { length: 50 }).notNull().default('draft'),
   tags: varchar('tags', { length: 100 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// 公開ページの閲覧履歴
+export const accessLogsTable = pgTable('access_logs', {
+  id: serial('id').primaryKey(),
+  trackingId: varchar('tracking_id', { length: 64 }).notNull().unique(),
+  path: varchar('path', { length: 500 }).notNull(),
+  userAgent: text('user_agent'),
+  referer: text('referer'),
+  duration: integer('duration'),
+  maxScrollDepth: integer('max_scroll_depth'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// サイト基本設定（1行のみ利用）
+export const siteSettingsTable = pgTable('site_settings', {
+  id: serial('id').primaryKey(),
+  siteTitle: varchar('site_title', { length: 255 }).notNull().default('Besmile CMS Portfolio'),
+  faviconUrl: text('favicon_url'),
+  adminEmail: varchar('admin_email', { length: 255 }),
+  smtpAppPassword: text('smtp_app_password'),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

@@ -83,7 +83,6 @@ export default function ArtistsAdminPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* 編集ボタンを追加 */}
                   <Link
                     href={`/artists/admin/${artist.id}/edit`}
                     className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"

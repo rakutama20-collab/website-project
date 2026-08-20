@@ -2,6 +2,8 @@
 
 ## 概要
 
+認証は Auth.js (NextAuth.js) の Credentials Provider を使用しています。既存の `admins` テーブルが User モデルの役割を担い、`email`、`password_hash`、`role`、`status` を保持します。セッションは JWT 方式で、`role` は JWT と Session の両方へ格納されます。
+
 BeSMILE CMS Admin に以下の3つの認証・セキュリティ機能を実装しました：
 
 - **ログイン/認証機能** - 管理画面へのアクセス制限

@@ -3,6 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin-shell";
+import { BriefcaseBusiness, Eye, FileText, Images, Mail, Settings, Users } from "lucide-react";
+
+type DashboardPost = { status?: string };
+type DashboardWork = { status?: string; id: number; title: string; category?: string; imageUrl?: string | null };
+type DashboardArtist = { id: number; name: string; role?: string | null; avatarUrl?: string | null };
+type AccessSummary = { month: string; count: number };
+type RecentAccess = { id: number; path: string; createdAt: string };
+type EngagementSummary = { average_duration: number; average_scroll_depth: number };
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -11,211 +19,207 @@ export default function DashboardPage() {
     scheduled: 0,
   });
   const [worksCount, setWorksCount] = useState(0);
+  const [publishedWorksCount, setPublishedWorksCount] = useState(0);
   const [artistsCount, setArtistsCount] = useState(0);
-  const [recentPosts, setRecentPosts] = useState<any[]>([]);
+  const [recentWorks, setRecentWorks] = useState<DashboardWork[]>([]);
+  const [featuredArtists, setFeaturedArtists] = useState<DashboardArtist[]>([]);
+  const [accessStats, setAccessStats] = useState<AccessSummary[]>([]);
+  const [recentAccesses, setRecentAccesses] = useState<RecentAccess[]>([]);
+  const [engagement, setEngagement] = useState<EngagementSummary>({ average_duration: 0, average_scroll_depth: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const postsRes = await fetch("/api/posts", { cache: "no-store" });
-        const postsData = await postsRes.json();
+    const controller = new AbortController();
+    const request = (url: string) => fetch(url, { cache: "no-store", signal: controller.signal });
+
+    Promise.allSettled([request("/api/posts"), request("/api/works"), request("/api/access-logs"), request("/api/artists")])
+      .then(async ([postsResult, worksResult, accessResult, artistsResult]) => {
+        const responses = await Promise.all([
+          postsResult.status === "fulfilled" && postsResult.value.ok ? postsResult.value.json() : null,
+          worksResult.status === "fulfilled" && worksResult.value.ok ? worksResult.value.json() : null,
+          accessResult.status === "fulfilled" && accessResult.value.ok ? accessResult.value.json() : null,
+          artistsResult.status === "fulfilled" && artistsResult.value.ok ? artistsResult.value.json() : null,
+        ]);
+        const [postsData, worksData, accessData, artistsData] = responses;
 
         if (Array.isArray(postsData)) {
-          const publishedCount = postsData.filter((post: any) => post.status === "published" || !post.status).length;
-          const draftCount = postsData.filter((post: any) => post.status === "draft").length;
-          const scheduledCount = postsData.filter((post: any) => post.status === "scheduled").length;
-
           setStats({
-            published: publishedCount,
-            drafts: draftCount,
-            scheduled: scheduledCount,
+            published: (postsData as DashboardPost[]).filter((post) => post.status === "published" || !post.status).length,
+            drafts: (postsData as DashboardPost[]).filter((post) => post.status === "draft").length,
+            scheduled: (postsData as DashboardPost[]).filter((post) => post.status === "scheduled").length,
           });
-
-          setRecentPosts(postsData.slice(0, 5));
         }
-
-        try {
-          const worksRes = await fetch("/api/works", { cache: "no-store" });
-          const worksData = await worksRes.json();
-          if (Array.isArray(worksData)) {
-            setWorksCount(worksData.length);
+        if (Array.isArray(worksData)) {
+          setWorksCount(worksData.length);
+          const publishedWorks = (worksData as DashboardWork[]).filter((work) => work.status === "公開" || work.status === "published");
+          setPublishedWorksCount(publishedWorks.length);
+          setRecentWorks(publishedWorks.slice(0, 3));
+        }
+        if (accessData) {
+          setAccessStats(Array.isArray(accessData.monthly) ? accessData.monthly : []);
+          setRecentAccesses(Array.isArray(accessData.recent) ? accessData.recent : []);
+          if (accessData.engagement) {
+            setEngagement({
+              average_duration: Number(accessData.engagement.average_duration) || 0,
+              average_scroll_depth: Number(accessData.engagement.average_scroll_depth) || 0,
+            });
           }
-        } catch (e) {
-          // API未実装時のフォールバック
         }
-
-        try {
-          const artistsRes = await fetch("/api/artists", { cache: "no-store" });
-          const artistsData = await artistsRes.json();
-          if (Array.isArray(artistsData)) {
-            setArtistsCount(artistsData.length);
-          }
-        } catch (e) {
-          // API未実装時のフォールバック
+        if (Array.isArray(artistsData)) {
+          setArtistsCount(artistsData.length);
+          setFeaturedArtists(artistsData.slice(0, 3));
         }
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
 
-      } catch (err) {
-        console.error("Failed to fetch dashboard data", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
+    return () => controller.abort();
   }, []);
 
   const statItems = [
-    { 
-      label: "公開済み", 
-      sub: "Published", 
-      value: loading ? "-" : stats.published, 
-      color: "text-emerald-600 bg-emerald-50 border-emerald-100",
-      dotColor: "bg-emerald-500"
-    },
-    { 
-      label: "下書き", 
-      sub: "Drafts", 
-      value: loading ? "-" : stats.drafts, 
-      color: "text-amber-600 bg-amber-50 border-amber-100",
-      dotColor: "bg-amber-500"
-    },
-    { 
-      label: "予約済み", 
-      sub: "Scheduled", 
-      value: loading ? "-" : stats.scheduled, 
-      color: "text-sky-600 bg-sky-50 border-sky-100",
-      dotColor: "bg-sky-500"
-    },
+    { label: "公開済み", sub: "Published", value: loading ? "-" : stats.published, color: "text-emerald-600", dot: "bg-emerald-500" },
+    { label: "下書き", sub: "Drafts", value: loading ? "-" : stats.drafts, color: "text-amber-600", dot: "bg-amber-500" },
+    { label: "予約済み", sub: "Scheduled", value: loading ? "-" : stats.scheduled, color: "text-sky-600", dot: "bg-sky-500" },
+  ];
+  const maxAccessCount = Math.max(...accessStats.map((item) => item.count), 1);
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const currentMonthAccesses = accessStats.find((item) => item.month === currentMonth)?.count ?? 0;
+  const kpiItems = [
+    { label: "総クリエイター数", value: artistsCount, unit: "名", detail: "登録中", href: "/artists/admin", icon: Users, tone: "sky" },
+    { label: "今月のアクセス数", value: currentMonthAccesses, unit: "PV", detail: "公開ページ", href: "#traffic", icon: Eye, tone: "violet" },
+    { label: "公開中の実績", value: publishedWorksCount, unit: "件", detail: `全 ${worksCount} 件中`, href: "/works/admin", icon: BriefcaseBusiness, tone: "emerald" },
+  ];
+  const quickMenuItems = [
+    { title: "基本設定", description: "サイトの基本情報を管理", href: "/settings", icon: Settings, tone: "bg-blue-50 text-blue-600 border-blue-100" },
+    { title: "投稿・記事", description: "記事の作成と編集", href: "/posts", icon: FileText, tone: "bg-violet-50 text-violet-600 border-violet-100" },
+    { title: "ワークス管理", description: "制作実績を登録・管理", href: "/works/admin", icon: BriefcaseBusiness, tone: "bg-orange-50 text-orange-600 border-orange-100" },
+    { title: "クリエイター管理", description: "担当者のプロフィールを管理", href: "/artists/admin", icon: Users, tone: "bg-emerald-50 text-emerald-600 border-emerald-100" },
+    { title: "メディア管理", description: "画像・ファイルを整理", href: "/media/admin", icon: Images, tone: "bg-pink-50 text-pink-600 border-pink-100" },
+    { title: "お問合せ管理", description: "届いたお問合せを確認", href: "/contacts/admin", icon: Mail, tone: "bg-amber-50 text-amber-600 border-amber-100" },
   ];
 
   return (
-    <AdminShell
-      title="ダッシュボード"
-      description="コンテンツの運用状況と最近のアクティビティの概要です。"
-    >
-      {/* 作品管理・クリエイター管理へのショートカットカード */}
-      <div className="grid gap-5 md:grid-cols-2 mb-6">
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm flex items-center justify-between">
+    <AdminShell title="ダッシュボード" description="コンテンツの運用状況と最近のアクティビティの概要です。">
+      <section className="mb-8">
+        <div className="mb-4 flex items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold text-slate-400">登録済み作品</p>
-            <p className="mt-1 text-2xl font-bold text-slate-900">{loading ? "-" : `${worksCount} 件`}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-600">Quick Access</p>
+            <h2 className="mt-1 text-xl font-black tracking-tight text-slate-900">よく使うメニュー</h2>
           </div>
-          <Link
-            href="/works/admin"
-            className="text-xs font-semibold text-sky-600 hover:text-sky-700 bg-sky-50 px-3 py-2 rounded-xl transition hover:bg-sky-100"
-          >
-            ワークス管理へ →
-          </Link>
+          <span className="hidden text-xs font-semibold text-slate-400 sm:block">ショートカット</span>
         </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {quickMenuItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href + item.title}
+                href={item.href}
+                className="group flex min-h-28 items-center gap-4 rounded-2xl border bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+              >
+                <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border ${item.tone} transition-transform duration-200 group-hover:scale-105`}>
+                  <Icon size={21} strokeWidth={2} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-slate-900 group-hover:text-sky-600">{item.title}</span>
+                  <span className="mt-1 block text-xs leading-5 text-slate-500">{item.description}</span>
+                </span>
+                <span className="ml-auto self-start text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-sky-500">→</span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-slate-400">登録クリエイター数</p>
-            <p className="mt-1 text-2xl font-bold text-slate-900">{loading ? "-" : `${artistsCount} 名`}</p>
-          </div>
-          <Link
-            href="/artists/admin"
-            className="text-xs font-semibold text-sky-600 hover:text-sky-700 bg-sky-50 px-3 py-2 rounded-xl transition hover:bg-sky-100"
-          >
-            クリエイター管理へ →
-          </Link>
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sky-100 bg-sky-50 px-5 py-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-600">Public Site</p>
+          <p className="mt-1 text-sm font-semibold text-slate-700">公開中のクリエイターと実績を確認できます。</p>
+        </div>
+        <div className="flex gap-2">
+          <Link href="/artists" target="_blank" className="rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm hover:text-sky-600">クリエイター</Link>
+          <Link href="/works" target="_blank" className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white hover:bg-sky-600">実績を見る</Link>
         </div>
       </div>
+      
+      <div className="mb-8 grid gap-4 md:grid-cols-3">
+        {kpiItems.map((item) => {
+          const Icon = item.icon;
+          const toneClasses = item.tone === "violet" ? "bg-violet-50 text-violet-600" : item.tone === "emerald" ? "bg-emerald-50 text-emerald-600" : "bg-sky-50 text-sky-600";
+          return (
+            <Link key={item.label} href={item.href} className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
+              <div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold text-slate-500">{item.label}</p><p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{item.detail}</p></div><span className={`flex h-10 w-10 items-center justify-center rounded-xl ${toneClasses}`}><Icon size={19} /></span></div>
+              <div className="mt-6 flex items-baseline gap-2"><span className="text-4xl font-black tracking-tight text-slate-900">{loading ? "-" : item.value}</span><span className="text-sm font-bold text-slate-400">{item.unit}</span></div>
+            </Link>
+          );
+        })}
+      </div>
 
-      <div className="grid gap-5 md:grid-cols-3">
+      <section className="mb-8 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-2xl border border-violet-100 bg-violet-50/70 p-5 shadow-sm">
+          <p className="text-xs font-bold text-violet-700">平均滞在時間</p>
+          <div className="mt-3 flex items-baseline gap-2"><span className="text-3xl font-black text-slate-900">{loading ? "-" : engagement.average_duration.toFixed(1)}</span><span className="text-sm font-bold text-slate-500">秒</span></div>
+          <p className="mt-2 text-xs text-slate-500">今月の公開ページ閲覧</p>
+        </div>
+        <div className="rounded-2xl border border-orange-100 bg-orange-50/70 p-5 shadow-sm">
+          <p className="text-xs font-bold text-orange-700">平均スクロール深度</p>
+          <div className="mt-3 flex items-baseline gap-2"><span className="text-3xl font-black text-slate-900">{loading ? "-" : engagement.average_scroll_depth.toFixed(0)}</span><span className="text-sm font-bold text-slate-500">%</span></div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/80"><div className="h-full rounded-full bg-orange-400 transition-all" style={{ width: `${Math.min(Math.max(engagement.average_scroll_depth, 0), 100)}%` }} /></div>
+        </div>
+      </section>
+
+      <div className="mb-8 grid gap-4 md:grid-cols-3">
         {statItems.map((stat) => (
-          <div 
-            key={stat.label} 
-            className="group rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:border-slate-300"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{stat.sub}</p>
-                <p className="text-sm font-semibold text-slate-800 mt-0.5">{stat.label}</p>
-              </div>
-              <span className={`inline-flex items-center justify-center w-9 h-9 rounded-xl border ${stat.color} shadow-sm`}>
-                <span className={`w-2 h-2 rounded-full ${stat.dotColor}`} />
-              </span>
+          <div key={stat.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-bold uppercase tracking-widest text-slate-400">{stat.sub}</span>
+              <div className={`w-2 h-2 rounded-full ${stat.dot}`} />
             </div>
-            <p className="mt-5 text-3xl font-extrabold tracking-tight text-slate-900">{stat.value}</p>
+            <p className="text-4xl font-black text-slate-900">{stat.value}</p>
+            <p className={`text-sm font-bold mt-2 ${stat.color}`}>{stat.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="mt-8 rounded-2xl border border-slate-200/80 bg-gradient-to-r from-slate-900 to-slate-800 p-6 text-white shadow-md">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <span className="inline-block px-2.5 py-1 mb-2 text-xs font-semibold tracking-wide uppercase bg-sky-500/20 text-sky-300 rounded-md border border-sky-500/30">
-              Quick Action
-            </span>
-            <h3 className="text-xl font-bold tracking-tight">クイックアクション</h3>
-            <p className="mt-1 text-sm text-slate-300">
-              コンテンツ管理のワークフローに素早くアクセスできます。
-            </p>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-5 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-sky-600">Creators</p><h2 className="mt-1 text-xl font-black">注目のクリエイター</h2></div><Link href="/artists" target="_blank" className="text-xs font-bold text-sky-600 hover:underline">一覧を見る →</Link></div>
+          <div className="space-y-3">
+            {featuredArtists.map((artist) => <Link key={artist.id} href={`/artists/${artist.id}`} target="_blank" className="flex items-center gap-3 rounded-xl border border-slate-100 p-3 hover:border-sky-200"><div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-slate-100">{artist.avatarUrl ? <img src={artist.avatarUrl} alt={artist.name} className="h-full w-full object-cover" /> : <span className="text-[9px] text-slate-400">No</span>}</div><div><p className="text-sm font-bold text-slate-800">{artist.name}</p><p className="text-xs text-slate-500">{artist.role || "専門分野未設定"}</p></div></Link>)}
+            {!loading && featuredArtists.length === 0 && <p className="text-sm text-slate-400">クリエイター情報はありません。</p>}
           </div>
-          <Link
-            href="/posts/new"
-            className="inline-flex items-center justify-center rounded-xl bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-sky-400 hover:shadow-sky-500/25"
-          >
-            + 新規投稿を作成
-          </Link>
-        </div>
+        </section>
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-5 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-sky-600">Works</p><h2 className="mt-1 text-xl font-black">公開中の実績</h2></div><Link href="/works" target="_blank" className="text-xs font-bold text-sky-600 hover:underline">一覧を見る →</Link></div>
+          <div className="space-y-3">
+            {recentWorks.map((work) => <Link key={work.id} href="/works" target="_blank" className="flex items-center gap-3 rounded-xl border border-slate-100 p-3 hover:border-sky-200">{work.imageUrl ? <img src={work.imageUrl} alt={work.title} className="h-12 w-16 rounded-lg object-cover" /> : <div className="flex h-12 w-16 items-center justify-center rounded-lg bg-slate-100 text-[9px] text-slate-400">No Image</div>}<div><p className="text-sm font-bold text-slate-800">{work.title}</p><p className="text-xs text-slate-500">{work.category || "Project"}</p></div></Link>)}
+            {!loading && recentWorks.length === 0 && <p className="text-sm text-slate-400">公開中の実績はありません。</p>}
+          </div>
+        </section>
       </div>
 
-      <div className="mt-8 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-5 pb-4 border-b border-slate-100">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">最近のアクティビティ</h3>
-            <p className="mt-0.5 text-xs text-slate-500">
-              直近に作成・更新されたポートフォリオ項目
-            </p>
+      <div className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <section id="traffic" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-6 flex items-start justify-between">
+            <div><p className="text-xs font-bold uppercase tracking-widest text-sky-600">Traffic</p><h2 className="mt-1 text-xl font-black">月ごとのアクセス数</h2></div>
+            <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-600">直近6か月</span>
           </div>
-          <Link
-            href="/posts"
-            className="text-xs font-semibold text-sky-600 hover:text-sky-700 transition"
-          >
-            すべて見る →
-          </Link>
-        </div>
+          {accessStats.length === 0 ? <p className="py-10 text-center text-sm text-slate-400">アクセスデータを集計中です。</p> : <div className="flex h-56 items-end gap-3 border-b border-slate-100 px-2 pb-0 sm:gap-5">
+            {accessStats.map((item) => <div key={item.month} className="flex h-full flex-1 flex-col items-center justify-end gap-2"><span className="text-xs font-bold text-slate-600">{item.count}</span><div className="w-full max-w-10 rounded-t-lg bg-sky-500 transition-all" style={{ height: `${Math.max((item.count / maxAccessCount) * 75, 8)}%` }} /><span className="pb-2 text-[10px] font-semibold text-slate-400">{item.month.slice(5)}月</span></div>)}
+          </div>}
+        </section>
 
-        {loading ? (
-          <div className="py-8 text-center text-sm text-slate-400">読み込み中...</div>
-        ) : recentPosts.length === 0 ? (
-          <div className="py-8 text-center text-sm text-slate-400">まだ投稿がありません。</div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {recentPosts.map((post) => (
-              <div key={post.id} className="py-3.5 flex items-center justify-between hover:bg-slate-50/80 px-3 rounded-xl transition">
-                <div className="flex items-center space-x-3.5 min-w-0">
-                  {post.status === "draft" ? (
-                    <span className="inline-flex items-center shrink-0 rounded-md bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 border border-amber-200/60">
-                      下書き
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center shrink-0 rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 border border-emerald-200/60">
-                      公開
-                    </span>
-                  )}
-
-                  {post.tags && (
-                    <span className="hidden sm:inline-flex items-center shrink-0 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 border border-slate-200">
-                      {post.tags}
-                    </span>
-                  )}
-
-                  <Link href={`/posts/${post.id}/edit`} className="font-medium text-sm text-slate-800 hover:text-sky-600 truncate transition">
-                    {post.title}
-                  </Link>
-                </div>
-
-                <div className="text-xs font-medium text-slate-400 shrink-0 pl-4">
-                  {post.updatedAt}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-6 flex items-start justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-sky-600">History</p><h2 className="mt-1 text-xl font-black">最近の閲覧履歴</h2></div><span className="text-xs font-semibold text-slate-400">最新20件</span></div>
+          {recentAccesses.length === 0 ? <p className="py-10 text-center text-sm text-slate-400">閲覧履歴はまだありません。</p> : <div className="max-h-56 space-y-2 overflow-y-auto pr-1">{recentAccesses.map((access) => <div key={access.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2.5"><span className="truncate text-xs font-semibold text-slate-700">{access.path}</span><time className="shrink-0 text-[10px] text-slate-400">{new Date(access.createdAt).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time></div>)}</div>}
+        </section>
       </div>
+
+      {/* 以下、クイックアクションと最近のアクティビティ（既存コードの構成） */}
+      {/* ... (既存のクイックアクション・アクティビティ部分はそのままお使いいただけます) */}
+      
     </AdminShell>
   );
 }

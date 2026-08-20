@@ -27,6 +27,8 @@ export async function POST(request: Request) {
         name: body.name || "名無し",
         email: body.email || null,
         role: body.role || null,
+        avatarUrl: body.avatarUrl || null,
+        bio: body.bio || null,
         status: body.status || "active",
       })
       .returning();
@@ -42,7 +44,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, name, email, role, status } = body;
+    const { id, name, email, role, avatarUrl, bio, status } = body;
     
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
@@ -54,6 +56,8 @@ export async function PUT(request: Request) {
         ...(name !== undefined && { name }),
         ...(email !== undefined && { email }),
         ...(role !== undefined && { role }),
+        ...(avatarUrl !== undefined && { avatarUrl }),
+        ...(bio !== undefined && { bio }),
         ...(status !== undefined && { status }),
       })
       .where(eq(artistsTable.id, Number(id)));
