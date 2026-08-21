@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AdminShell } from "@/components/admin-shell";
 import { BriefcaseBusiness, Eye, FileText, Images, Mail, Settings, Users } from "lucide-react";
 
@@ -56,7 +57,7 @@ export default function DashboardPage() {
           setRecentWorks(publishedWorks.slice(0, 3));
         }
         if (accessData) {
-          setAccessStats(Array.isArray(accessData.monthly) ? accessData.monthly : []);
+          setAccessStats(Array.isArray(accessData.monthly) ? accessData.monthly.map((item: AccessSummary) => ({ ...item, count: Number(item.count) || 0 })) : []);
           setRecentAccesses(Array.isArray(accessData.recent) ? accessData.recent : []);
           if (accessData.engagement) {
             setEngagement({
@@ -206,8 +207,16 @@ export default function DashboardPage() {
             <div><p className="text-xs font-bold uppercase tracking-widest text-sky-600">Traffic</p><h2 className="mt-1 text-xl font-black">月ごとのアクセス数</h2></div>
             <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-600">直近6か月</span>
           </div>
-          {accessStats.length === 0 ? <p className="py-10 text-center text-sm text-slate-400">アクセスデータを集計中です。</p> : <div className="flex h-56 items-end gap-3 border-b border-slate-100 px-2 pb-0 sm:gap-5">
-            {accessStats.map((item) => <div key={item.month} className="flex h-full flex-1 flex-col items-center justify-end gap-2"><span className="text-xs font-bold text-slate-600">{item.count}</span><div className="w-full max-w-10 rounded-t-lg bg-sky-500 transition-all" style={{ height: `${Math.max((item.count / maxAccessCount) * 75, 8)}%` }} /><span className="pb-2 text-[10px] font-semibold text-slate-400">{item.month.slice(5)}月</span></div>)}
+          {accessStats.length === 0 ? <p className="py-10 text-center text-sm text-slate-400">アクセスデータを集計中です。</p> : <div className="h-56 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={accessStats} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                <XAxis dataKey="month" tickFormatter={(month: string) => `${month.slice(5)}月`} tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} domain={[0, Math.max(maxAccessCount, 1)]} tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                <Tooltip labelFormatter={(month) => `${String(month).replace("-", "年")}月`} formatter={(value) => [`${Number(value).toLocaleString()} PV`, "アクセス"]} contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", boxShadow: "0 8px 24px rgba(15, 23, 42, 0.08)" }} />
+                <Line type="monotone" dataKey="count" stroke="#0284c7" strokeWidth={3} dot={{ r: 4, fill: "#0284c7", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>}
         </section>
 

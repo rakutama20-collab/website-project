@@ -62,11 +62,17 @@ async function ensureSchema() {
     `CREATE TABLE IF NOT EXISTS works (
       id SERIAL PRIMARY KEY,
       title VARCHAR(255) NOT NULL,
+      creator_id INTEGER,
+      description TEXT,
+      project_url VARCHAR(500),
       category VARCHAR(100),
       status VARCHAR(50) NOT NULL DEFAULT 'draft',
       image_url VARCHAR(500),
       created_at TIMESTAMP DEFAULT NOW() NOT NULL
     )`,
+    `ALTER TABLE works ADD COLUMN IF NOT EXISTS creator_id INTEGER`,
+    `ALTER TABLE works ADD COLUMN IF NOT EXISTS description TEXT`,
+    `ALTER TABLE works ADD COLUMN IF NOT EXISTS project_url VARCHAR(500)`,
     `CREATE TABLE IF NOT EXISTS artists (
       id SERIAL PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
@@ -103,6 +109,45 @@ async function ensureSchema() {
       admin_email VARCHAR(255),
       smtp_app_password TEXT,
       updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+    )`,
+    `ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS auto_reply_enabled BOOLEAN NOT NULL DEFAULT FALSE`,
+    `ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS auto_reply_subject VARCHAR(255) NOT NULL DEFAULT 'お問い合わせありがとうございます'`,
+    `ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS auto_reply_body TEXT NOT NULL DEFAULT '{{name}} 様
+
+お問い合わせありがとうございます。
+内容を確認のうえ、担当者よりご連絡いたします。'`,
+    `CREATE TABLE IF NOT EXISTS contacts (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      company VARCHAR(255),
+      email VARCHAR(255) NOT NULL,
+      subject VARCHAR(255),
+      message TEXT NOT NULL,
+      status VARCHAR(30) NOT NULL DEFAULT 'new',
+      internal_note TEXT,
+      created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+      updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS contact_fields (
+      id SERIAL PRIMARY KEY,
+      field_key VARCHAR(64) UNIQUE NOT NULL,
+      label VARCHAR(255) NOT NULL,
+      type VARCHAR(30) NOT NULL DEFAULT 'text',
+      options JSONB NOT NULL DEFAULT '[]'::jsonb,
+      is_required BOOLEAN NOT NULL DEFAULT FALSE,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+      updated_at TIMESTAMP DEFAULT NOW() NOT NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS contact_field_values (
+      id SERIAL PRIMARY KEY,
+      contact_id INTEGER NOT NULL,
+      field_id INTEGER,
+      field_key VARCHAR(64) NOT NULL,
+      label_snapshot VARCHAR(255) NOT NULL,
+      value TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW() NOT NULL
     )`,
     `CREATE TABLE IF NOT EXISTS posts (
       id SERIAL PRIMARY KEY,

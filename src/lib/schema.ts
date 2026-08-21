@@ -1,4 +1,4 @@
-import { pgTable, serial, timestamp, varchar, text, integer } from 'drizzle-orm/pg-core';
+import { pgTable, serial, timestamp, varchar, text, integer, boolean, jsonb } from 'drizzle-orm/pg-core';
 
 // Auth.js Credentials Provider が User モデルとして利用する管理者テーブル
 export const adminsTable = pgTable('admins', {
@@ -66,5 +66,44 @@ export const siteSettingsTable = pgTable('site_settings', {
   faviconUrl: text('favicon_url'),
   adminEmail: varchar('admin_email', { length: 255 }),
   smtpAppPassword: text('smtp_app_password'),
+  autoReplyEnabled: boolean('auto_reply_enabled').notNull().default(false),
+  autoReplySubject: varchar('auto_reply_subject', { length: 255 }).notNull().default('お問い合わせありがとうございます'),
+  autoReplyBody: text('auto_reply_body').notNull().default('{{name}} 様\n\nお問い合わせありがとうございます。\n内容を確認のうえ、担当者よりご連絡いたします。'),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const contactsTable = pgTable('contacts', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  company: varchar('company', { length: 255 }),
+  email: varchar('email', { length: 255 }).notNull(),
+  subject: varchar('subject', { length: 255 }),
+  message: text('message').notNull(),
+  status: varchar('status', { length: 30 }).notNull().default('new'),
+  internalNote: text('internal_note'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const contactFieldsTable = pgTable('contact_fields', {
+  id: serial('id').primaryKey(),
+  fieldKey: varchar('field_key', { length: 64 }).notNull().unique(),
+  label: varchar('label', { length: 255 }).notNull(),
+  type: varchar('type', { length: 30 }).notNull().default('text'),
+  options: jsonb('options').$type<string[]>().notNull().default([]),
+  isRequired: boolean('is_required').notNull().default(false),
+  sortOrder: integer('sort_order').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const contactFieldValuesTable = pgTable('contact_field_values', {
+  id: serial('id').primaryKey(),
+  contactId: integer('contact_id').notNull(),
+  fieldId: integer('field_id'),
+  fieldKey: varchar('field_key', { length: 64 }).notNull(),
+  labelSnapshot: varchar('label_snapshot', { length: 255 }).notNull(),
+  value: text('value').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 import { auth } from "@/auth";
 
 const publicPaths = ["/login"];
@@ -13,7 +12,7 @@ function isPublicPage(pathname: string) {
 export default auth((request) => {
   const { pathname } = request.nextUrl;
 
-  if (publicPaths.includes(pathname) || pathname === "/api/access-log" || pathname.startsWith("/api/auth/")) {
+  if (publicPaths.includes(pathname) || pathname === "/contact" || pathname === "/api/access-log" || pathname === "/api/contacts" || pathname === "/api/contact-fields" || pathname.startsWith("/api/auth/")) {
     return NextResponse.next();
   }
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { signOut } from "next-auth/react";
 import type { ReactNode } from "react";
 import {
@@ -13,9 +14,11 @@ import {
   Images,
   LayoutDashboard,
   LogOut,
+  Menu,
   Mail,
   Palette,
   Settings,
+  X,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -42,6 +45,7 @@ export function AdminShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -53,8 +57,18 @@ export function AdminShell({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50/50 to-slate-100 text-slate-900">
+      <button
+        type="button"
+        aria-label="メニューを開く"
+        aria-expanded={sidebarOpen}
+        onClick={() => setSidebarOpen(true)}
+        className="fixed right-4 top-4 z-30 flex h-11 w-11 items-center justify-center rounded-xl bg-slate-950 text-white shadow-lg lg:hidden"
+      >
+        <Menu size={21} />
+      </button>
+      {sidebarOpen && <button type="button" aria-label="メニューを閉じる" onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-30 bg-slate-950/45 lg:hidden" />}
       <div className="mx-auto flex max-w-[1600px] flex-col gap-5 px-3 py-3 sm:px-5 sm:py-5 lg:flex-row lg:gap-6 lg:px-8">
-        <aside className="flex w-full shrink-0 flex-col justify-between rounded-2xl border border-slate-800 bg-slate-950 p-4 text-slate-100 shadow-xl shadow-slate-300/30 lg:sticky lg:top-5 lg:h-[calc(100vh-40px)] lg:w-72">
+        <aside className={`fixed inset-y-3 left-3 z-40 flex w-[min(19rem,calc(100vw-1.5rem))] shrink-0 flex-col justify-between rounded-2xl border border-slate-800 bg-slate-950 p-4 text-slate-100 shadow-xl shadow-slate-300/30 transition-transform duration-200 lg:static lg:inset-auto lg:z-auto lg:flex lg:w-72 lg:translate-x-0 lg:sticky lg:top-5 lg:h-[calc(100vh-40px)] ${sidebarOpen ? "translate-x-0" : "-translate-x-[calc(100%+1rem)]"}`}>
           <div>
             <div className="mb-6 flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/80 p-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500 text-white shadow-lg shadow-sky-500/20">
@@ -64,6 +78,7 @@ export function AdminShell({
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-400">Besmile CMS</p>
                 <h1 className="mt-0.5 text-base font-bold text-white">管理コンソール</h1>
               </div>
+              <button type="button" aria-label="メニューを閉じる" onClick={() => setSidebarOpen(false)} className="ml-auto rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white lg:hidden"><X size={18} /></button>
             </div>
 
             <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Workspace</p>
@@ -74,6 +89,7 @@ export function AdminShell({
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => setSidebarOpen(false)}
                   className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 ${isActive ? "bg-sky-500 text-white shadow-lg shadow-sky-500/20" : "text-slate-400 hover:translate-x-0.5 hover:bg-slate-900 hover:text-white"}`}
                 >
                   <Icon size={17} className={isActive ? "text-white" : "text-slate-500 transition-colors group-hover:text-sky-400"} />
@@ -106,7 +122,7 @@ export function AdminShell({
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 lg:p-8">
+        <main className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white p-4 pt-16 shadow-sm sm:p-6 sm:pt-6 lg:p-8">
           <div className="mb-7 flex flex-col gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-sky-600">Admin workspace</p>
