@@ -156,20 +156,23 @@ export default function EditArtistPage() {
 
                     <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">アバター画像</label>
-                        <div className="flex items-center gap-4 mt-2">
-                            <div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                        <div className="mt-3 flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
+                            <div className="flex h-40 w-40 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 shadow-sm">
                                 {previewUrl ? (
                                     <img src={previewUrl} alt="プレビュー" className="w-full h-full object-cover" />
                                 ) : (
                                     <span className="text-[10px] text-slate-400">No Image</span>
                                 )}
                             </div>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFileChange}
-                                className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-50 file:text-sky-600 hover:file:bg-sky-100 cursor-pointer"
-                            />
+                            <div className="min-w-0 flex-1 space-y-2">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                    className="w-full text-xs text-slate-500 file:mr-4 file:rounded-xl file:border-0 file:bg-sky-50 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-sky-600 hover:file:bg-sky-100"
+                                />
+                                <p className="text-xs leading-5 text-slate-400">正方形に近い画像がおすすめです。選択した画像は丸くトリミングされます。</p>
+                            </div>
                         </div>
                     </div>
 
